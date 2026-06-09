@@ -248,11 +248,15 @@ function gameOver() {
   uiOverlay.classList.add('active');
   uiOverlay.innerHTML = `
     <h1>游戏结束</h1>
-    <p class="score-display">最终得分: ${score}</p>
-    <p>最高得分: ${highScore}</p>
+    <p class="score-display">最终得分: ${formatScore(score)}</p>
+    <p>最高得分: ${formatScore(highScore)}</p>
     <p>到达关卡: ${level}</p>
     <button onclick="startGame()">再来一局</button>
   `;
+}
+
+function formatScore(n) {
+  return String(n).padStart(6, '0');
 }
 
 function spawnEnemy() {
@@ -271,26 +275,28 @@ function spawnEnemy() {
   }
 
   const r = Math.random();
+  const leftPad = 15, rightPad = W - 15;
+  const baseX = () => Math.random() * (rightPad - leftPad) + leftPad;
   let enemy;
   if (r < 0.55) {
     enemy = {
-      x: Math.random() * (W - 30) + 15, y: -30, w: 28, h: 28, hp: 1,
+      x: baseX(), y: -28, w: 28, h: 28, hp: 1,
       speed: 1.2 + Math.random() * level * 0.15, type: 'basic',
       color: COLORS.enemy[Math.floor(Math.random() * COLORS.enemy.length)],
       shootTimer: 0, points: 100
     };
   } else if (r < 0.85) {
     enemy = {
-      x: Math.random() * (W - 36) + 18, y: -36, w: 36, h: 36, hp: 2,
+      x: baseX(), y: -36, w: 36, h: 36, hp: 2,
       speed: 0.8 + Math.random() * level * 0.12, type: 'medium',
-      color: '#ff7043', shootTimer: 80 + Math.random() * 60,
+      color: COLORS.enemyMedium, shootTimer: 80 + Math.random() * 60,
       shootRate: Math.max(80, 140 - level * 8), points: 250
     };
   } else {
     enemy = {
-      x: Math.random() * (W - 44) + 22, y: -44, w: 44, h: 44, hp: 3,
+      x: baseX(), y: -44, w: 44, h: 44, hp: 3,
       speed: 0.6 + Math.random() * level * 0.08, type: 'heavy',
-      color: '#ab47bc', shootTimer: 60 + Math.random() * 40,
+      color: COLORS.enemyHeavy, shootTimer: 60 + Math.random() * 40,
       shootRate: Math.max(70, 110 - level * 6), points: 500
     };
   }
@@ -301,7 +307,10 @@ function spawnPowerup(x, y) {
   if (Math.random() > 0.18) return;
   const types = ['power', 'life', 'shield'];
   const type = types[Math.floor(Math.random() * types.length)];
-  powerups.push({ x, y, w: 20, h: 20, type, speed: 1.5, pulse: 0 });
+  powerups.push({
+    x, y, w: 20, h: 20, type, speed: 1.5, pulse: 0,
+    clamp: { left: 12, right: W - 12, top: -20, bottom: H + 20 }
+  });
 }
 
 function createExplosion(x, y, count, colors) {
@@ -621,7 +630,7 @@ function update(dt) {
     if (warnings[i].timer <= 0) warnings.splice(i, 1);
   }
 
-  document.getElementById('hud-score').textContent = `得分: ${score}`;
+  document.getElementById('hud-score').textContent = `得分: ${formatScore(score)}`;
   document.getElementById('hud-lives').textContent = `生命: ${lives}`;
   document.getElementById('hud-level').textContent = `关卡: ${level}`;
 }
