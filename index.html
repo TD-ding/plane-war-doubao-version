@@ -76,6 +76,7 @@ canvas {
   justify-content: center;
 }
 #hud span { background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 4px; }
+#hud-combo { color: #ffc832; font-weight: bold; min-width: 100px; }
 </style>
 </head>
 <body>
@@ -83,6 +84,7 @@ canvas {
 <div id="hud">
   <span id="hud-score">得分: 0</span>
   <span id="hud-high">最高: 0</span>
+  <span id="hud-combo"></span>
   <span id="hud-lives">生命: 3</span>
   <span id="hud-level">关卡: 1</span>
 </div>
@@ -148,6 +150,9 @@ let player, bullets, enemies, particles, powerups, stars, enemyBullets;
 let highScore = parseInt(localStorage.getItem('planeWarHighScore') || '0');
 let paused = false;
 let warnings = [];
+let combo = 0;
+let comboTimer = 0;
+let comboMultiplier = 1;
 
 function initStars() {
   stars = [];
@@ -174,6 +179,9 @@ function initGame() {
   powerups = [];
   enemyBullets = [];
   warnings = [];
+  combo = 0;
+  comboTimer = 0;
+  comboMultiplier = 1;
   screenShake = { intensity: 0, duration: 0, timer: 0 };
   score = 0;
   lives = 3;
@@ -582,6 +590,10 @@ function update(dt) {
         bullets.splice(j, 1);
         if (e.hp <= 0) {
           score += e.points;
+          combo++;
+          comboTimer = 120;
+          comboMultiplier = Math.min(5, 1 + Math.floor(combo / 5));
+          score += e.points * (comboMultiplier - 1);
           createExplosion(e.x, e.y, 15, COLORS.explosion);
           if (e.type === 'boss') {
             createExplosion(e.x, e.y, 40, ['#e91e63', '#ffc832', '#ff6b35', '#fff']);
@@ -638,9 +650,15 @@ function update(dt) {
     if (warnings[i].timer <= 0) warnings.splice(i, 1);
   }
 
+  if (comboTimer > 0) {
+    comboTimer -= ds;
+    if (comboTimer <= 0) { combo = 0; comboMultiplier = 1; }
+  }
+
   document.getElementById('hud-score').textContent = `得分: ${formatScore(score)}`;
   document.getElementById('hud-lives').textContent = `生命: ${lives}`;
   document.getElementById('hud-level').textContent = `关卡: ${level}`;
+  document.getElementById('hud-combo').textContent = combo >= 3 ? `x${comboMultiplier} COMBO(${combo})` : '';
 }
 
 function draw() {
