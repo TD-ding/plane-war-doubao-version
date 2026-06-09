@@ -152,7 +152,11 @@ let paused = false;
 let warnings = [];
 let combo = 0;
 let comboTimer = 0;
-let comboMultiplier = 1;
+let floatingTexts = [];
+
+function addFloatingText(x, y, text, color) {
+  floatingTexts.push({ x, y, text, color, life: 60, maxLife: 60 });
+}
 
 function initStars() {
   stars = [];
@@ -182,6 +186,7 @@ function initGame() {
   combo = 0;
   comboTimer = 0;
   comboMultiplier = 1;
+  floatingTexts = [];
   screenShake = { intensity: 0, duration: 0, timer: 0 };
   score = 0;
   lives = 3;
@@ -594,6 +599,7 @@ function update(dt) {
           comboTimer = 120;
           comboMultiplier = Math.min(5, 1 + Math.floor(combo / 5));
           score += e.points * (comboMultiplier - 1);
+          addFloatingText(e.x, e.y, `+${e.points * comboMultiplier}`, comboMultiplier >= 2 ? '#ffc832' : '#fff');
           createExplosion(e.x, e.y, 15, COLORS.explosion);
           if (e.type === 'boss') {
             createExplosion(e.x, e.y, 40, ['#e91e63', '#ffc832', '#ff6b35', '#fff']);
@@ -643,6 +649,13 @@ function update(dt) {
     p.y += p.vy * ds;
     p.life -= ds;
     if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    ft.y -= 1 * ds;
+    ft.life -= ds;
+    if (ft.life <= 0) floatingTexts.splice(i, 1);
   }
 
   for (let i = warnings.length - 1; i >= 0; i--) {
@@ -698,6 +711,16 @@ function draw() {
     ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
   }
   ctx.globalAlpha = 1;
+
+  for (const ft of floatingTexts) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, ft.life / 20);
+    ctx.fillStyle = ft.color;
+    ctx.font = 'bold 14px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+  }
 
   if (gameState === 'playing' || gameState === 'over') drawPlayer();
 
